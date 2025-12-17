@@ -195,10 +195,10 @@ function displayUsers(users) {
                 <small><strong>ID:</strong> ${user.id}</small><br>
                 <small><strong>Created:</strong> ${date}</small>
                 <div class="user-actions">
-                    <button class="btn btn-small btn-edit" onclick='editUser(${JSON.stringify(user)})'>
+                    <button class="btn btn-small btn-edit" data-user-id="${user.id}" data-user-name="${escapeHtml(user.name)}" data-user-email="${escapeHtml(user.email)}">
                         ✏️ Edit
                     </button>
-                    <button class="btn btn-small btn-delete" onclick="deleteUser(${user.id})">
+                    <button class="btn btn-small btn-delete" data-user-id="${user.id}">
                         🗑️ Delete
                     </button>
                 </div>
@@ -207,6 +207,24 @@ function displayUsers(users) {
     }).join('');
 
     container.innerHTML = `<div class="users-grid">${usersHTML}</div>`;
+
+    // Add event listeners to all edit and delete buttons
+    container.querySelectorAll('.btn-edit').forEach(button => {
+        button.addEventListener('click', function() {
+            const user = {
+                id: parseInt(this.dataset.userId),
+                name: this.dataset.userName,
+                email: this.dataset.userEmail
+            };
+            editUser(user);
+        });
+    });
+
+    container.querySelectorAll('.btn-delete').forEach(button => {
+        button.addEventListener('click', function() {
+            deleteUser(parseInt(this.dataset.userId));
+        });
+    });
 }
 
 function showNotification(message, type) {

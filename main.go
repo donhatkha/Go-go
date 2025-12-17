@@ -117,7 +117,9 @@ func runMigrations() {
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// In production, this should be restricted to specific origins
+		allowedOrigin := getEnv("CORS_ALLOWED_ORIGIN", "*")
+		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
@@ -158,6 +160,12 @@ func getUsersHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		users = append(users, user)
+	}
+
+	// Check for errors from iterating over rows
+	if err := rows.Err(); err != nil {
+		respondError(w, http.StatusInternalServerError, "Error iterating over users")
+		return
 	}
 
 	response := Response{
@@ -245,7 +253,11 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rowsAffected, _ := result.RowsAffected()
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to get rows affected")
+		return
+	}
 	if rowsAffected == 0 {
 		respondError(w, http.StatusNotFound, "User not found")
 		return
@@ -268,7 +280,11 @@ func deleteUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rowsAffected, _ := result.RowsAffected()
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to get rows affected")
+		return
+	}
 	if rowsAffected == 0 {
 		respondError(w, http.StatusNotFound, "User not found")
 		return
